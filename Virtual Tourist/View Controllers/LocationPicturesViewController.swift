@@ -38,7 +38,7 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
     var long = Double()
     
     //collection size
-    var collSize = 12
+    var collSize = 21
     
     fileprivate func setupFetchedResultsController() {
         //fetch request
@@ -106,7 +106,6 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
     
     override func viewDidAppear(_ animated: Bool) {
         super.viewDidAppear(true)
-        //self.collectionView?.reloadData()
         
         setupFetchedResultsController()
         
@@ -151,9 +150,6 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
             return collSize
         }
         
-        //return fetchedResultsController.sections?[section].numberOfObjects ?? collSize
-        //return 21
-        //return collSize
     }
     
     internal func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -162,20 +158,19 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
         let cell = collectionView.dequeueReusableCell(withReuseIdentifier: "PictureCell", for: indexPath) as! CollectionViewCell
         cell.backgroundColor = UIColor.gray
         
-        //print(indexPath)
-        //print(self.imageCache[indexPath.row] as Any)
-        
-        //1. this is where the array gets checked for value so cells dont reload
-        if let finalImage = pitctureArray[safe: indexPath.row]{
+        //This is no longer needed but i have saved it here just to compare the new function
+        //1. this is where the array gets checked for value so cells dont reload when scrolling
+        /*if let finalImage = pitctureArray[safe: indexPath.row]{
             
             print("Image will load from array when scrolled, and not downloaded again")
             cell.cellImage?.image = finalImage
             //return cell
             
-        } else if (fetchedResultsController.sections?[0].numberOfObjects == 0) /*&& (pitctureArray.count < 20) */{
+        } else*/
+        
+        if indexPath.row >= (fetchedResultsController.fetchedObjects?.count)! {
         
             //2. this is where i want to check if the element is empty, and when the images get loaded from the internet, they will save to the array, never to be loaded again
-            //print("fetch!!")
             
             cell.activityIndicator.startAnimating()
             
@@ -193,7 +188,8 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
                         
                         //hard save to core data
                         let photo = Photo(context: self.dataController.viewContext)
-                        let imageData: Data = UIImagePNGRepresentation(image)! as Data
+                        let imageData: Data? = UIImagePNGRepresentation(image)
+                        //let imageData: Data = UIImagePNGRepresentation(image)! as Data
                         photo.pic = imageData
                         photo.creationDate = Date()
                         photo.pin = self.pin
@@ -223,18 +219,15 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
             
         }
         
-        if reloadFlag == fetchedResultsController.sections?[0].numberOfObjects{
+        /*if reloadFlag == fetchedResultsController.sections?[0].numberOfObjects{
             setupFetchedResultsController()
-        }
+        }*/
         
         return cell
         
     }
     
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
-        print("TEST!")
-        print(indexPath)
         
         //reduce size by one
         collSize -= 1
@@ -253,7 +246,28 @@ class LocationPicturesViewController:UIViewController, UICollectionViewDelegate,
         
     }
     
-    func deletePic(indexPath: IndexPath){
+    @IBAction func reloadPics(_ sender: Any) {
+        
+        //reduce size initially
+        collSize -= 1
+        
+        //go thru all of the saved pics and delete them one by one
+        while collSize > -1 {
+            
+            //delete from core data
+            let picToDelete = fetchedResultsController.object(at: IndexPath(row: collSize, section: 0))
+            dataController.viewContext.delete(picToDelete)
+            
+            collSize -= 1
+        }
+        
+        //save current changes and reset array
+        try? dataController.viewContext.save()
+        self.pitctureArray.removeAll()
+        
+        //reset view size and reload data
+        collSize = 21
+        collectionView.reloadData()
         
     }
     
@@ -267,44 +281,30 @@ extension Collection {
     }
 }
 
-/*extension LocationPicturesViewController: NSFetchedResultsControllerDelegate {
-    
-    func controllerWillChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        //collectionView.beginUpdates()
-    }
-    
-    func controllerDidChangeContent(_ controller: NSFetchedResultsController<NSFetchRequestResult>) {
-        //collectionView.endUpdates()
-    }
+
+//this is here to update the data when loaded so it can be deleted as soon as it is saved.
+extension LocationPicturesViewController: NSFetchedResultsControllerDelegate {
     
     func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange anObject: Any, at indexPath: IndexPath?, for type: NSFetchedResultsChangeType, newIndexPath: IndexPath?) {
         switch type{
         case .insert:
             //tableView.insertRows(at: [newIndexPath!], with: .fade)
-            collectionView.insertItems(at: [newIndexPath!])
+            //collectionView.insertItems(at: [newIndexPath!])
             break
         case .delete:
             //tableView.deleteRows(at: [indexPath!], with: .fade)
-            collectionView.deleteItems(at: [newIndexPath!])
+            //collectionView.deleteItems(at: [newIndexPath!])
             break
         case .update:
             //tableView.reloadRows(at: [indexPath!], with: .fade)
-            collectionView.reloadItems(at: [newIndexPath!])
+            //collectionView.reloadItems(at: [newIndexPath!])
+            break
         case .move:
             //tableView.moveRow(at: indexPath!, to: newIndexPath!)
-            collectionView.moveItem(at: indexPath!, to: newIndexPath!)
+            //collectionView.moveItem(at: indexPath!, to: newIndexPath!)
+            break
         }
     }
-    
-    func controller(_ controller: NSFetchedResultsController<NSFetchRequestResult>, didChange sectionInfo: NSFetchedResultsSectionInfo, atSectionIndex sectionIndex: Int, for type: NSFetchedResultsChangeType) {
-        let indexSet = IndexSet(integer: sectionIndex)
-        switch type {
-        case .insert: break //collectionView.insertItems(at: [indexSet])
-        case .delete: break //collectionView.deleteItems(at: [indexSet])
-        case .update, .move:
-            fatalError("Invalid change type in controller(_:didChange:atSectionIndex:for:). Only .insert or .delete should be possible.")
-        }
-    }
-}*/
+}
 
 

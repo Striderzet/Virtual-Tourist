@@ -137,7 +137,6 @@ class MainViewController: UIViewController, MKMapViewDelegate {
     
     func mapView(_ mapView: MKMapView, didDeselect view: MKAnnotationView) {
         view.setSelected(false, animated: true)
-        print("DeSelected...")
     }
     
     //long press function
@@ -191,11 +190,6 @@ class MainViewController: UIViewController, MKMapViewDelegate {
     
     //delete pin function when deleteSwitch is ON
     func deletePin(pinLat: Double, pinLong: Double){
-        //dataController.viewContext.reset()
-        //try? dataController.viewContext.save()
-        
-        print(fetchedResultsController.sections?[0].numberOfObjects as Any)
-        print("-------------------------------------")
         
         //iteration variable
         var place = 0
@@ -204,11 +198,6 @@ class MainViewController: UIViewController, MKMapViewDelegate {
             
             //iterate through fetched data
             let results = fetchedResultsController.object(at: IndexPath(row: place, section: 0))
-            
-            print(results.latitude)
-            print(pinLat)
-            print(results.longitude)
-            print(pinLong)
             
             if (pinLat == results.latitude) && (pinLong == results.longitude){
                 
@@ -229,9 +218,6 @@ class MainViewController: UIViewController, MKMapViewDelegate {
     //send info over to next VC
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if let vc = segue.destination as? LocationPicturesViewController {
-            
-            print(mapView.selectedAnnotations[0].coordinate.latitude)
-            print(mapView.selectedAnnotations[0].coordinate.longitude)
             
             var place = 0
             while place < (fetchedResultsController.sections?[0].numberOfObjects)!{
